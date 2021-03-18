@@ -62,7 +62,8 @@ expressApp.get('/callback/', function(req, res) {
   console.log("Requesting Tokens")
   // Request refresh and access tokens after checking the state parameter
 
-  const code = req.query.code || null;  
+  // TODO No longer required?
+  //const code = req.query.code || null;  
   const state = req.query.state || null;
   
   // TODO Figure out how to use state properly  
@@ -75,84 +76,64 @@ expressApp.get('/callback/', function(req, res) {
       }));
   } else {
       // TODO Clear state?      
-      // Construct Authorisation options
-      const authOptions = {
-          url: 'https://accounts.spotify.com/api/token',
-          form: {
-              code: code,
-              redirect_uri: 'http://localhost:3000/app/callback',
-              grant_type: 'authorization_code'
-          },
-          headers: {
-              'Authorization': 'Basic ' + 
-                // TODO Buffer is deprecated
-                  (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64'))
-          },
-          json: true
-      };
-
-      console.log(authOptions)
-      // Request tokens
-      // request.post(authOptions, function(error, response, body) {
-      //     console.log("Response Status Code: ", response.statusCode)
-      //     const reqSuccess = !error && response.statusCode === 200
-      //     if (reqSuccess) {                
-      //         var access_token = body.access_token,
-      //             refresh_token = body.refresh_token;
-              
-      //         var options = {
-      //             url: 'https://api.spotify.com/v1/me',
-      //             headers: { 'Authorization': 'Bearer ' + access_token },
-      //             json: true
-      //         };
-
-      //         // Use the access token to access the Spotify Web API
-      //         request.get(options, function(error, response, body) {
-      //             console.log(body);
-      //         });
-              
-      //         console.log("Access Token: ", access_token)
-      //         console.log("Refresh Token: ", refresh_token)
-      //         res.json({
-      //             access_token: access_token,
-      //             refresh_token: refresh_token
-      //         })
-              
-      //     } else {
-      //         console.log("ERROR!" , error);                
-      //     }
-      // });
-      // TODO Re-implement with Axios
-      axios.post(authOptions, function(error, response, body) {
-        console.log("Response Status Code: ", response.statusCode)
-        const reqSuccess = !error && response.statusCode === 200
-        if (reqSuccess) {                
-            var access_token = body.access_token,
-                refresh_token = body.refresh_token;
-            
-            var options = {
-                url: 'https://api.spotify.com/v1/me',
-                headers: { 'Authorization': 'Bearer ' + access_token },
-                json: true
-            };
-
-            // Use the access token to access the Spotify Web API
-            request.get(options, function(error, response, body) {
-                console.log(body);
-            });
-            
-            console.log("Access Token: ", access_token)
-            console.log("Refresh Token: ", refresh_token)
-            res.json({
-                access_token: access_token,
-                refresh_token: refresh_token
+        // Request tokens          
+        axios({
+            url: '/token',
+            method: 'post',
+            baseURL: 'https://accounts.spotify.com/api',
+            params: {
+                grant_type: 'client-credentials'
+            },
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            auth: {
+                username: process.env.CLIENT_ID,
+                password: process.env.CLIENT_SECRET
+            }
+        }).then(function (response) {
+            console.log({
+                'data': response.data,
+                'status' : response.status,
+                'statusText' : response.statusText,
+                'headers' : response.headers,
+                'config' : response.config
             })
-            
-        } else {
-            console.log("ERROR!" , error);                
-        }
-    });
-  }
+            axios({
+                url: 'https://api.spotify.com/v1/me',
+                method: 'get', 
+                headers: {
+                    'Authorization': 'Bearer ' + response.data.access_token
+                }
+            }).then(function (response) {
+                console.log(response)
+            })
+
+            res.json({
+                access_token: response.data.access_token,
+                refresh_token: response.data.refresh_token
+            })
+
+        }).catch(function (error) {
+            if (error.response) {
+              // The request was made and the server responded with a status code
+              // that falls out of the range of 2xx
+              console.log(error.response.data);
+              console.log(error.response.status);
+              console.log(error.response.headers);
+            } else if (error.request) {
+              // The request was made but no response was received
+              // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+              // http.ClientRequest in node.js
+              console.log(error.request);
+            } else {
+              // Something happened in setting up the request that triggered an Error
+              console.log('Error', error.message);
+            }
+            console.log(error.config);
+          });
+    }
 });
 
 
