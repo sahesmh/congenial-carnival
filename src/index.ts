@@ -12,6 +12,12 @@ const expressApp = express();
 const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
 
+type trackData = {
+    uri : string;
+    name : string;
+    artists : string[];
+};
+
 function generateRandomString(length: number) {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -159,12 +165,7 @@ expressApp.get('/get-most-played', function(req, res) {
     }).then(function (response) {
         console.log("GET Response ", response.status);                
         console.log("Successfully retrieved tracks")
-        const numTracks : number = response.data.items.length;
-        type trackData = {
-            uri : string;
-            name : string;
-            artists : string[];
-        };
+        const numTracks : number = response.data.items.length;        
         let trackList : trackData[];
         for (let trackNum = 0; trackNum < numTracks; trackNum++) {
             const track : trackData= {
@@ -196,6 +197,90 @@ expressApp.get('/get-most-played', function(req, res) {
         }
         console.log(error.config);
     });
+});
+
+// Create Playlist endpoint
+expressApp.get('/create-playlist', function(req, res) {    
+    let playlistID = "UNPOPULATED"    
+    console.log("Making a playlist")
+
+    // Lets make the bold assumption that making a new playlist
+    // will overwrite an old one by the same name. Or at least
+    // not break things
+
+    const timeRange : string = req.query.length as string || "long_term"
+    const access_token : string = req.query.access_token as string
+    const songList : string[] = req.query.songList as string[]
+
+    // Get User's ID
+    axios({
+        url : 'https://api.spotify.com/v1/me',
+        method : 'get',
+        headers : {
+            'Accept'        : 'application/json',
+            'Content-Type'  : 'application/json',
+            'Authorization' : 'Bearer ' + access_token
+        }        
+    }).then (function(response) {
+        console.log("GET Response ", response.status);
+        const userID : string = response.data.id;
+        console.log("Obtained User ID: " + userID);
+        
+        axios({
+            url: 'https://api.spotify.com/v1/users/' + userID + '/playlists',
+            headers: {
+                'Accept'        : 'application/json',
+                'Content-Type'  : 'application/json',
+                'Authorization' : 'Bearer ' + access_token
+            },
+            method : 'post',
+            data : {
+                name: "Most Played - " + timeRange,
+                public: false,
+                collaborative: false,
+                description: "Courtesy of Shane :D"
+            },
+            transformRequest: [function (data) {
+                return data.json;
+            }]
+        }).then (function (response) {
+            console.log("POST Response ", response.status);
+            playlistID = response.data.id
+
+            // Add songs to this new playlist
+            console.log("User ID: " + userID);
+            console.log("Playlist ID: " + playlistID)
+            console.log("Song List: " + songList)
+            
+            axios({
+                url: 'https://api.spotify.com/v1/playlists/' + playlistID + '/tracks?uris=' + songList,
+                method : "post",
+                headers: {
+                    'Accept'        : 'application/json',
+                    'Content-Type'  : 'application/json',
+                    'Authorization' : 'Bearer ' + access_token
+                }                
+            }).then (function(response) {
+                console.log("POST Response: ", response.status);
+                console.log("Successfully added songs to Playlist " + playlistID)
+                res.send({
+                    successful: true,
+                    playlistID: playlistID
+                })
+            }).catch (function(error){
+                // Playlist Update Failed
+                console.log("UNSUCCESSFUL POST")
+                res.json({
+                    successful: false,
+                    playlistID: playlistID
+                })
+            });            
+        }).catch (function(error){
+            // Playlist Creation Failed
+        });
+    }).catch (function(error){
+        // User ID Get Failed
+    });    
 });
 
 expressApp.listen(port);
