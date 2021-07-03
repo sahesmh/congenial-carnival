@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosStatic } from 'axios';
+import axios, { AxiosError } from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
