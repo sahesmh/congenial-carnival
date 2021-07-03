@@ -136,6 +136,67 @@ expressApp.get('/callback/', function(req, res) {
     }
 });
 
+// Get Most Played Songs endpoint
+expressApp.get('/get-most-played', function(req, res) {
+    console.log("Requesting songs");
+
+    const timeRange : string = req.query.length as string || "long_term" // Will be short_term, medium_term or long_term
+    const access_token : string = req.query.access_token as string
+    
+    // Request User's Most-Played Tracks for the given length
+    axios({
+        url: 'https://api.spotify.com/v1/me/top/tracks?' +
+            queryString.stringify({
+                time_range: timeRange,
+                limit: 50
+            }),
+        method: 'get', 
+        headers: {
+            'Accept'       : 'application/json',
+            'Content-Type' : 'application/json',
+            'Authorization': 'Bearer ' + access_token
+        }
+    }).then(function (response) {
+        console.log("GET Response ", response.status);                
+        console.log("Successfully retrieved tracks")
+        const numTracks : number = response.data.items.length;
+        type trackData = {
+            uri : string;
+            name : string;
+            artists : string[];
+        };
+        let trackList : trackData[];
+        for (let trackNum = 0; trackNum < numTracks; trackNum++) {
+            const track : trackData= {
+                uri     : response.data.items[trackNum].uri,                    
+                name    : response.data.items[trackNum].name,
+                artists : response.data.items[trackNum].artists
+            };
+            trackList[trackNum] = track;
+        }        
+        console.log(trackList);
+        res.send({
+            trackData: trackList
+        });        
+    }).catch(function (error) {
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.log(error.response.data);
+            console.log(error.response.status);
+            console.log(error.response.headers);
+        } else if (error.request) {
+            // The request was made but no response was received
+            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+            // http.ClientRequest in node.js
+            console.log(error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.log('Error', error.message);
+        }
+        console.log(error.config);
+    });
+});
 
 expressApp.listen(port);
 console.log("Express Server Listening on Port " + port);
