@@ -2,6 +2,7 @@ import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import * as path from 'path';
 import queryString from 'querystring';
 
 // Initialise Config
@@ -281,6 +282,12 @@ expressApp.get('/create-playlist', function(req, res) {
     }).catch (function(error){
         // User ID Get Failed
     });    
+});
+
+// 'Any Other Request' endpoint
+expressApp.get('*', (req,res) =>{
+    console.log("User reached Any Other Requests endpoint with URL ", req.originalUrl)
+    res.sendFile(path.join(__dirname+'/client/public/index.html'));
 });
 
 expressApp.listen(port);
