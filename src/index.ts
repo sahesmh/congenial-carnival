@@ -10,6 +10,7 @@ dotenv.config();
 
 // Express App Config
 const expressApp = express();
+expressApp.use(cors());
 const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
 
@@ -69,7 +70,7 @@ expressApp.get('/auth/spotify', function(req, res) {
   const state = generateRandomString(16);
   res.cookie(stateKey, state);
   console.log(stateKey, state);
-  
+    
   // Construct Redirect URL
   const scope = 'user-read-private user-read-email user-top-read playlist-modify-private';  
   const responseURL = 'https://accounts.spotify.com/authorize?' +
@@ -77,7 +78,7 @@ expressApp.get('/auth/spotify', function(req, res) {
       response_type: 'code',
       client_id: process.env.CLIENT_ID,
       scope: scope,
-      redirect_uri: 'http://localhost:' + port + '/app/callback',            
+      redirect_uri: 'http://localhost:3000/app/callback',            
       state: state
   });
 
