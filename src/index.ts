@@ -13,6 +13,7 @@ const expressApp = express();
 expressApp.use(cors());
 const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
+const redirectURI = 'http://localhost:3000/app/callback';
 
 type trackData = {
     uri : string;
@@ -78,7 +79,7 @@ expressApp.get('/auth/spotify', function(req, res) {
       response_type: 'code',
       client_id: process.env.CLIENT_ID,
       scope: scope,
-      redirect_uri: 'http://localhost:3000/app/callback',            
+      redirect_uri: redirectURI,            
       state: state
   });
 
@@ -93,9 +94,7 @@ expressApp.get('/auth/spotify', function(req, res) {
 expressApp.get('/callback/', function(req, res) {
   console.log("Requesting Tokens")
   // Request refresh and access tokens after checking the state parameter
-
-  // TODO No longer required?
-  //const code = req.query.code || null;  
+  const authorizationCode = req.query.code || null;  
   const state = req.query.state || null;
   
   // TODO Figure out how to use state properly  
@@ -113,8 +112,10 @@ expressApp.get('/callback/', function(req, res) {
             url: '/token',
             method: 'post',
             baseURL: 'https://accounts.spotify.com/api',
-            params: {
-                grant_type: 'client-credentials'
+            params: { // All paremeters here are required for Authorization Code Flow
+                grant_type: 'authorization_code',
+                code: authorizationCode,
+                redirect_uri: redirectURI
             },
             headers: {
                 'Accept': 'application/json',
@@ -125,6 +126,7 @@ expressApp.get('/callback/', function(req, res) {
                 password: process.env.CLIENT_SECRET
             }
         }).then(function (response) {
+            console.log("Received response to token request")
             console.log({
                 'data': response.data,
                 'status' : response.status,
@@ -139,15 +141,18 @@ expressApp.get('/callback/', function(req, res) {
                     'Authorization': 'Bearer ' + response.data.access_token
                 }
             }).then(function (response) {
+                console.log("Recieved response to user data request")
                 console.log(response)
             })
 
+            console.log("Sending tokens as response to /callback/")
             res.json({
                 access_token: response.data.access_token,
                 refresh_token: response.data.refresh_token
             })
 
         }).catch(function (error) {
+            console.error("Error requesting tokens")
             handleAxiosError(error);
         });
     }
@@ -177,14 +182,15 @@ expressApp.get('/get-most-played', function(req, res) {
         console.log("GET Response ", response.status);                
         console.log("Successfully retrieved tracks")
         const numTracks : number = response.data.items.length;        
-        let trackList : trackData[];
+        const trackList : trackData[] = [];
         for (let trackNum = 0; trackNum < numTracks; trackNum++) {
-            const track : trackData= {
+            console.log("Up to Track Num ", trackNum);
+            const track : trackData = {
                 uri     : response.data.items[trackNum].uri,                    
                 name    : response.data.items[trackNum].name,
                 artists : response.data.items[trackNum].artists
-            };
-            trackList[trackNum] = track;
+            };            
+            trackList.push(track);
         }        
         console.log(trackList);
         res.send({
