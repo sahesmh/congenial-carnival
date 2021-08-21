@@ -242,10 +242,7 @@ expressApp.get('/create-playlist', function(req, res) {
                 public: false,
                 collaborative: false,
                 description: "Courtesy of Shane :D"
-            },
-            transformRequest: [function (data) {
-                return data.json;
-            }]
+            }
         }).then (function (response) {
             console.log("POST Response ", response.status);
             playlistID = response.data.id
