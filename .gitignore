@@ -1,3 +1,5 @@
+devjournal.txt
 dist
 node_modules
+yarn-error.log
 .env
