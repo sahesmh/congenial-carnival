@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import * as path from 'path';
-import queryString from 'querystring';
 
 // Initialise Config
 dotenv.config();
@@ -74,14 +73,14 @@ expressApp.get('/auth/spotify', function(req, res) {
     
   // Construct Redirect URL
   const scope = 'user-read-private user-read-email user-top-read playlist-modify-private';  
-  const responseURL = 'https://accounts.spotify.com/authorize?' +
-  queryString.stringify({
+  const responseParams = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.CLIENT_ID,
       scope: scope,
       redirect_uri: redirectURI,            
       state: state
-  });
+    }).toString();
+  const responseURL = 'https://accounts.spotify.com/authorize?' + responseParams;
 
   // Send Response
   console.log("Response will be ", responseURL);
@@ -101,10 +100,10 @@ expressApp.get('/callback/', function(req, res) {
   if (state == null) {
       // TODO Later: Figure out the best way to check state
       console.log('ERR: No State')
-      res.redirect('/#' +
-          queryString.stringify({
-          error: 'state_mismatch'
-      }));
+      const errorParams = new URLSearchParams({
+        error: 'state_mismatch'
+      }).toString();
+      res.redirect('/#' + errorParams);
   } else {
       // TODO Clear state?      
         // Request tokens          
@@ -165,13 +164,14 @@ expressApp.get('/get-most-played', function(req, res) {
     const timeRange : string = req.query.length as string || "long_term" // Will be short_term, medium_term or long_term
     const access_token : string = req.query.access_token as string
     
+    const requestParams = new URLSearchParams({
+        time_range: timeRange,
+        limit: "50"
+    }).toString();
+
     // Request User's Most-Played Tracks for the given length
     axios({
-        url: 'https://api.spotify.com/v1/me/top/tracks?' +
-            queryString.stringify({
-                time_range: timeRange,
-                limit: 50
-            }),
+        url: 'https://api.spotify.com/v1/me/top/tracks?' + requestParams,
         method: 'get', 
         headers: {
             'Accept'       : 'application/json',
