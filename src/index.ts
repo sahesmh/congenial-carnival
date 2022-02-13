@@ -20,6 +20,15 @@ type trackData = {
     artists : string[];
 };
 
+type playlistData = {
+    id : string;
+    uri : string;
+    name : string;
+    owner_id : string;
+    num_tracks : number;
+    tracks_api_ref : string;
+}
+
 function generateRandomString(length: number) {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -283,6 +292,55 @@ expressApp.get('/create-playlist', function(req, res) {
         // User ID Get Failed
         handleAxiosError(error);
     });    
+});
+
+// Get User's Playlists endpoint
+// TODO currently untested
+expressApp.get('/get-user-playlists', function(req, res) {
+
+    const playlistLimit : string = req.query.limit as string || "10"
+    const playlistOffset : string = req.query.offset as string || "0"
+    const access_token : string = req.query.access_token as string
+
+    const requestParams = new URLSearchParams({
+        limit: playlistLimit,
+        offset: playlistOffset
+    }).toString();
+
+    axios({
+        url: 'https://api.spotify.com/v1/me/playlists?' + requestParams,
+        method: 'get',
+        headers: {
+            'Accept'        : 'application/json',
+            'Content-Type'  : 'application/json',
+            'Authorization' : 'Bearer ' + access_token
+        }
+    }).then(function (response) {
+        console.log("GET Response ", response.status);
+        console.log("Successfully retrieved current user's playlists")
+        const numPlaylists : number = response.data.items.length;
+        const playlistList : playlistData[] = [];
+        // TODO the Spotify API endpoint can only retrieve max 50 playlists. Create a do-while loop with nextRequest != null as the condition to get all the user's playlists.
+        // const nextRequest : string = response.data.next;
+        for (let playlistNum = 0; playlistNum < numPlaylists; playlistNum++) {
+            console.log("Up to Playlist Num ", playlistNum);
+            const track : playlistData = {
+                id      : response.data.items[playlistNum].id,
+                uri     : response.data.items[playlistNum].uri,
+                name    : response.data.items[playlistNum].name,
+                owner_id: response.data.items[playlistNum].owner.id,
+                num_tracks: response.data.items[playlistNum].tracks.total,
+                tracks_api_ref : response.data.items[playlistNum].tracks.href
+            };
+            playlistList.push(track);
+        }
+        console.log(playlistList);
+        res.send({
+            playlistData: playlistList
+        });
+    }).catch(function(error) {
+        handleAxiosError(error);
+    });
 });
 
 // 'Any Other Request' endpoint
