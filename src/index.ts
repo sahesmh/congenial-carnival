@@ -1,3 +1,7 @@
+/**
+ * This is the entry point for Congenial-Carnival, the API for the Spotify Playlist Manager app.
+ * @module Congenial-Carnival-API
+ */
 import axios, { AxiosError } from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -14,12 +18,20 @@ const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
 const redirectURI = 'http://localhost:3000/app/callback';
 
+/**
+ * Data Type for storing Tack information
+ */
 type trackData = {
     uri : string;
     name : string;
     artists : string[];
 };
 
+/**
+ * Generate a random string of characters
+ * @param length the length of the random string
+ * @returns A random string of characters
+ */
 function generateRandomString(length: number) {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -30,6 +42,10 @@ function generateRandomString(length: number) {
   return text;
 }
 
+/**
+ * Default Error logging methodology for handling Axios errors
+ * @param error the error thrown by call to Axios
+ */
 function handleAxiosError(error : Error | AxiosError) {
     if (axios.isAxiosError(error)){
         if (error.response) {
@@ -56,13 +72,19 @@ function handleAxiosError(error : Error | AxiosError) {
 
 console.log("Initialising Express Endpoints");
 
+/**
+ * Express API Endpoint /api/placeholder
+ * @returns Hello World in JSON
+ */
 expressApp.get('/api/placeholder', cors(), (req, res) => {
   const list = ["Hello", "World!"];
   res.json(list);
   console.log('Sent Hello World');
 })
 
-// Spotify Login endpoint
+/**
+ * Express API Endpoint /auth/spotify
+ */
 expressApp.get('/auth/spotify', function(req, res) {
   console.log('/auth/spotify - Auth request received')
 
@@ -89,7 +111,9 @@ expressApp.get('/auth/spotify', function(req, res) {
   })    
 });
 
-// Spotify Callback enpoint
+/**
+ * Express API Endpoint /callback/
+ */
 expressApp.get('/callback/', function(req, res) {
   console.log("Requesting Tokens")
   // Request refresh and access tokens after checking the state parameter
@@ -157,7 +181,9 @@ expressApp.get('/callback/', function(req, res) {
     }
 });
 
-// Get Most Played Songs endpoint
+/**
+ * Express API Endpoint /get-most-played
+ */
 expressApp.get('/get-most-played', function(req, res) {
     console.log("Requesting songs");
 
@@ -202,7 +228,9 @@ expressApp.get('/get-most-played', function(req, res) {
     });
 });
 
-// Create Playlist endpoint
+/**
+ * Express API Endpoint /create-playlist
+ */
 expressApp.get('/create-playlist', function(req, res) {    
     let playlistID = "UNPOPULATED"    
     console.log("Making a playlist")
@@ -285,7 +313,9 @@ expressApp.get('/create-playlist', function(req, res) {
     });    
 });
 
-// 'Any Other Request' endpoint
+/**
+ * Express API Endpoint 'Any Other Request'
+ */
 expressApp.get('*', (req,res) =>{
     console.log("User reached Any Other Requests endpoint with URL ", req.originalUrl)
     res.sendFile(path.join(__dirname+'/client/public/index.html'));
