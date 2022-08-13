@@ -1,0 +1,12 @@
+services:
+  congenial-carnival:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_CONNNSTRING=mongodb://CongenialCarnival:CongenialCarnival@mongodb
+  mongodb:
+    image: mongo:5.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=CongenialCarnival
+      - MONGO_INITDB_ROOT_PASSWORD=CongenialCarnival
