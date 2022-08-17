@@ -7,6 +7,8 @@ services:
       - MONGODB_CONNNSTRING=mongodb://CongenialCarnival:CongenialCarnival@mongodb
   mongodb:
     image: mongo:5.0
+    volumes: 
+      - dbvolume1:/data/db:rw
     environment:
       - MONGO_INITDB_ROOT_USERNAME=CongenialCarnival
       - MONGO_INITDB_ROOT_PASSWORD=CongenialCarnival

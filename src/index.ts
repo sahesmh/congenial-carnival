@@ -6,6 +6,7 @@ import axios, { AxiosError } from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { MongoClient } from 'mongodb';
 import * as path from 'path';
 
 // Initialise Config
@@ -17,6 +18,9 @@ expressApp.use(cors());
 const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
 const redirectURI = 'http://localhost:3000/app/callback';
+const dbConnectionString = process.env.MONGODB_CONNSTRING;
+const dbClient = new MongoClient(dbConnectionString);
+
 
 /**
  * Data Type for storing Tack information
@@ -67,6 +71,27 @@ function handleAxiosError(error : Error | AxiosError) {
     } else {
         // Stock Error - log and move on
         console.error(error);        
+    }
+}
+
+/**
+ * Creates a sample log in the database
+ * @param event Log to add to db
+ */
+async function sampleDatabaseEvent(event : string) {
+    try {
+        const database = dbClient.db('sample_db');
+        const events = database.collection('events');
+
+        const timestamp = new Date();
+
+        events.insertOne( 
+            { 
+                sampleEvent : event,
+                timestamp : timestamp.getTime()   
+         });
+    } finally {
+        dbClient.close();
     }
 }
 
@@ -174,6 +199,9 @@ expressApp.get('/callback/', function(req, res) {
                 refresh_token: response.data.refresh_token
             })
 
+            sampleDatabaseEvent("Callback endpoint passed").catch(() => {
+                console.log("Failed DB entry at Callback")});
+
         }).catch(function (error) {
             console.error("Error requesting tokens")
             handleAxiosError(error);
@@ -222,7 +250,10 @@ expressApp.get('/get-most-played', function(req, res) {
         res.send({
             trackData: trackList
         });        
-    // }).catch(function (error) {
+        
+        sampleDatabaseEvent("get-most-played endpoint passed with " + timeRange).catch(() => {
+            console.log("Failed DB entry at get-most-played " + timeRange)});
+
     }).catch(function(error) {
         handleAxiosError(error);
     });
@@ -295,6 +326,10 @@ expressApp.get('/create-playlist', function(req, res) {
                     successful: true,
                     playlistID: playlistID
                 })
+
+                sampleDatabaseEvent("create-playlist endpoint passed with " + timeRange).catch(() => {
+                    console.log("Failed DB entry at create-playlist " + timeRange)});
+
             }).catch (function(error){
                 // Playlist Update Failed
                 handleAxiosError(error);                
