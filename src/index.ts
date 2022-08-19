@@ -7,7 +7,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { MongoClient } from 'mongodb';
-import * as path from 'path';
 
 // Initialise Config
 dotenv.config();
@@ -83,7 +82,7 @@ async function sampleDatabaseEvent(event : string) {
         const database = dbClient.db('sample_db');
         const events = database.collection('events');
 
-        const timestamp = new Date();
+        const timestamp = new Date();        
 
         events.insertOne( 
             { 
@@ -91,7 +90,7 @@ async function sampleDatabaseEvent(event : string) {
                 timestamp : timestamp.getTime()   
          });
     } finally {
-        dbClient.close();
+        // TODO Close database connection?
     }
 }
 
@@ -198,7 +197,7 @@ expressApp.get('/callback/', function(req, res) {
                 access_token: response.data.access_token,
                 refresh_token: response.data.refresh_token
             })
-
+            
             sampleDatabaseEvent("Callback endpoint passed").catch(() => {
                 console.log("Failed DB entry at Callback")});
 
@@ -351,9 +350,8 @@ expressApp.get('/create-playlist', function(req, res) {
 /**
  * Express API Endpoint 'Any Other Request'
  */
-expressApp.get('*', (req,res) =>{
+expressApp.get('*', (req) =>{
     console.log("User reached Any Other Requests endpoint with URL ", req.originalUrl)
-    res.sendFile(path.join(__dirname+'/client/public/index.html'));
 });
 
 expressApp.listen(port);
