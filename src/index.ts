@@ -16,7 +16,7 @@ const expressApp = express();
 expressApp.use(cors());
 const stateKey = 'spotify_auth_state';
 const port = process.env.EXPRESS_SERVER_PORT || 5050;
-const redirectURI = 'http://localhost:3000/app/callback';
+// const redirectURI = 'http://localhost:3000/app/callback';
 const dbConnectionString = process.env.MONGODB_CONNSTRING;
 const dbClient = new MongoClient(dbConnectionString);
 
@@ -107,16 +107,20 @@ expressApp.get('/api/placeholder', cors(), (req, res) => {
 })
 
 /**
- * Express API Endpoint /auth/spotify
+ * Express API Endpoint /auth/get-spotify-login-url
  */
-expressApp.get('/auth/spotify', function(req, res) {
+expressApp.get('/auth/get-spotify-login-url', function(req, res) {
   console.log('/auth/spotify - Auth request received')
 
   // Send State Key
   const state = generateRandomString(16);
   res.cookie(stateKey, state);
   console.log(stateKey, state);
-    
+
+  // Currently we expect this to be 'http://localhost:3000/app/callback';
+  const redirectURI : string = req.query.redirectURI.toString();
+  // TODO error handling if redirectURI doesn't exist
+
   // Construct Redirect URL
   const scope = 'user-read-private user-read-email user-top-read playlist-modify-private';  
   const responseParams = new URLSearchParams({
@@ -136,13 +140,14 @@ expressApp.get('/auth/spotify', function(req, res) {
 });
 
 /**
- * Express API Endpoint /callback/
+ * Express API Endpoint /auth/get-spotify-tokens
  */
-expressApp.get('/callback/', function(req, res) {
+expressApp.get('/auth/get-spotify-tokens', function(req, res) {
   console.log("Requesting Tokens")
   // Request refresh and access tokens after checking the state parameter
   const authorizationCode = req.query.code || null;  
   const state = req.query.state || null;
+  const redirectURI : string = req.query.redirectURI.toString();
   
   // TODO Figure out how to use state properly  
   if (state == null) {
