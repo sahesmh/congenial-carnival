@@ -30,6 +30,12 @@ type trackData = {
     artists : string[];
 };
 
+type playlistData = {
+    uri : string;
+    name : string;
+    ownerName : string;
+};
+
 /**
  * Generate a random string of characters
  * @param length the length of the random string
@@ -257,6 +263,46 @@ expressApp.get('/get-most-played', function(req, res) {
         
         sampleDatabaseEvent("get-most-played endpoint passed with " + timeRange).catch(() => {
             console.log("Failed DB entry at get-most-played " + timeRange)});
+
+    }).catch(function(error) {
+        handleAxiosError(error);
+    });
+});
+
+expressApp.get('/get-user-playlists', function(req, res) {    
+    console.log("Getting playlists of user")
+
+    const userID : string = req.query.userID as string || "UNPOPULATED"
+    const access_token : string = req.query.access_token as string
+    
+    axios({
+        url: 'https://api.spotify.com/v1/users/' + userID + '/playlists', 
+        method: 'get', 
+        headers: {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': 'application/json'
+        }
+    }).then(function (response) {
+        console.log("GET Response ", response.status);
+        console.log("Successfully retrieved playlists")
+        const numPlaylists : number = response.data.items.length;
+        const playlistList : playlistData[] = [];
+        for (let playlistNum = 0; playlistNum < numPlaylists; playlistNum++) {
+            console.log("Up to Playlist Num ", playlistNum);
+            const playlist : playlistData = {
+                uri : response.data.items[playlistNum].uri,
+                name : response.data.items[playlistNum].name,
+                ownerName : /*response.data.items[playlistNum].owner.??.display_name*/"UNCLEAR"
+            };
+            playlistList.push(playlist);            
+        }
+        console.log(playlistList);
+        res.send({
+            playlistData: playlistList
+        });
+
+        sampleDatabaseEvent("get-most-played endpoint passed with " + userID).catch(() => {
+            console.log("Failed DB entry at get-most-played " + userID)});
 
     }).catch(function(error) {
         handleAxiosError(error);
