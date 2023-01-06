@@ -26,6 +26,8 @@
     "prebuild": "eslint . --ext .ts",
     "build": "tsc",
     "prestart": "npm run build",
-    "start": "node ."
+    "start": "node .",
+    "docker-start": "docker compose up",
+    "docker-delete": "docker compose down && docker image rm congenial-carnival_congenial-carnival"
   }
 }
