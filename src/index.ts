@@ -7,6 +7,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { MongoClient } from 'mongodb';
+import * as Types from './types';
 
 // Initialise Config
 dotenv.config();
@@ -19,22 +20,6 @@ const port = process.env.EXPRESS_SERVER_PORT || 5050;
 // const redirectURI = 'http://localhost:3000/app/callback';
 const dbConnectionString = process.env.MONGODB_CONNSTRING;
 const dbClient = new MongoClient(dbConnectionString);
-
-
-/**
- * Data Type for storing Tack information
- */
-type trackData = {
-    uri : string;
-    name : string;
-    artists : string[];
-};
-
-type playlistData = {
-    uri : string;
-    name : string;
-    ownerName : string;
-};
 
 /**
  * Generate a random string of characters
@@ -251,10 +236,10 @@ expressApp.get('/get-most-played', function(req, res) {
         console.log("GET Response ", response.status);                
         console.log("Successfully retrieved tracks")
         const numTracks : number = response.data.items.length;        
-        const trackList : trackData[] = [];
+        const trackList : Types.trackData[] = [];
         for (let trackNum = 0; trackNum < numTracks; trackNum++) {
             console.log("Up to Track Num ", trackNum);
-            const track : trackData = {
+            const track : Types.trackData = {
                 uri     : response.data.items[trackNum].uri,                    
                 name    : response.data.items[trackNum].name,
                 artists : response.data.items[trackNum].artists
@@ -294,10 +279,10 @@ expressApp.get('/get-other-user-playlists', function(req, res) {
         console.log("GET Response ", response.status);
         console.log("Successfully retrieved playlists")
         const numPlaylists : number = response.data.items.length;
-        const playlistList : playlistData[] = [];
+        const playlistList : Types.playlistData[] = [];
         for (let playlistNum = 0; playlistNum < numPlaylists; playlistNum++) {
             console.log("Up to Playlist Num ", playlistNum);
-            const playlist : playlistData = {
+            const playlist : Types.playlistData = {
                 uri : response.data.items[playlistNum].uri,
                 name : response.data.items[playlistNum].name,
                 ownerName : /*response.data.items[playlistNum].owner.??.display_name*/"UNCLEAR"
@@ -326,7 +311,7 @@ expressApp.get('/get-user-playlists', function(req, res) {
     const access_token : string = req.query.access_token as string
     const limit = 50;
     
-    const finalPlaylistList : playlistData[] = [];
+    const finalPlaylistList : Types.playlistData[] = [];
 
     const playlistPromise = new Promise<boolean>((resolve) => {
         console.log("Executing Playlist Promise");
@@ -353,7 +338,7 @@ expressApp.get('/get-user-playlists', function(req, res) {
                     const numPlaylists : number = response.data.items.length;
                     
                     for (let playlistNum = 0; playlistNum < numPlaylists; playlistNum++) {
-                        const playlist : playlistData = {
+                        const playlist : Types.playlistData = {
                             uri : response.data.items[playlistNum].uri,
                             name : response.data.items[playlistNum].name,
                             ownerName : /*response.data.items[playlistNum].owner.??.display_name*/"UNCLEAR"
